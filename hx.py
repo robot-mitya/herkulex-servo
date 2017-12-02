@@ -58,21 +58,41 @@ def print_packet(label, data, show_calculated_checksums):
 
 parser = argparse.ArgumentParser(
     description="Checks HerkuleX servo packet.",
-    epilog="Example:\n" +
-           "python3 hx.py \"FF FF 07 FE 07 FE 00\"" +
+    epilog="Examples:\n" +
+           "  1. To test and fix checksums (setting green LED command):\n"
+           "     python3 hx.py \"FF FF 0A FD 03 C0 3E 35 01 01\"\n" +
+           "  2. To send request and receive response ('stat' command example):\n"
+           "     python3 hx.py -r \"FF FF 07 FE 07 FE 00\"\n" +
            "\n" +
            "If errors:\n" +
-           "sudo apt-get install python3-pil\n" +
-           "sudo easy_install -U pyserial",
+           "  sudo apt-get install python3-pil\n" +
+           "  easy_install -U pyserial",
     formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument(
     "packet",
-    help="packet to check")
+    help="packet to check"
+)
+parser.add_argument(
+    "-p",
+    "--port",
+    type=str,
+    default="/dev/ttyUSB0",
+    help="communication port (default: %(default)s)"
+)
+parser.add_argument(
+    "-b",
+    "--baudrate",
+    type=int,
+    default=115200,
+    choices=[57600, 115200],
+    help="communication baud rate (default: %(default)d)"
+)
 parser.add_argument(
     "-r",
     "--run",
     action='store_true',
-    help="send to servo and run")
+    help="send to servo and run"
+)
 args = parser.parse_args()
 
 packet = bytearray.fromhex(args.packet)
@@ -125,8 +145,8 @@ if cs2 != packet[6]:
     packet[6] = cs2
 
 with serial.Serial(
-    port='/dev/ttyUSB0',
-    baudrate=115200,
+    port=args.port,
+    baudrate=args.baudrate,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS,
@@ -139,6 +159,3 @@ with serial.Serial(
     if len(received) >= 7:
         description = "Received (" + str(len(received)) + " bytes): "
         print_packet(description, received, False)
-
-# TODO: Передавать имя порта параметром.
-# TODO: Передавать скорость передачи данных параметром.
